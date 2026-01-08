@@ -60,50 +60,50 @@ class SentimentAnalyzerAgent:
 
     FINBERT_CHUNK_SIZE = 500
 
+    # Class-level model cache (shared across instances)
+    _finbert = None
+    _roberta = None
+    _vader = None
+
     def __init__(self, llm: LLM = None):
         self.llm = llm or LLM()
         self.name = "Sentiment Analyzer"
-
-        # Lazy-loaded models
-        self._finbert = None
-        self._roberta = None
-        self._vader = None
 
     # ----- Lazy Loading -----
 
     @property
     def finbert(self):
         """Lazy load FinBERT model."""
-        if self._finbert is None:
+        if SentimentAnalyzerAgent._finbert is None:
             logger.info("Loading FinBERT model...")
             from transformers import pipeline
-            self._finbert = pipeline(
+            SentimentAnalyzerAgent._finbert = pipeline(
                 "sentiment-analysis",
                 model="ProsusAI/finbert",
                 device=-1  # CPU
             )
-        return self._finbert
+        return SentimentAnalyzerAgent._finbert
 
     @property
     def roberta(self):
         """Lazy load RoBERTa model."""
-        if self._roberta is None:
+        if SentimentAnalyzerAgent._roberta is None:
             logger.info("Loading RoBERTa model...")
             from transformers import pipeline
-            self._roberta = pipeline(
+            SentimentAnalyzerAgent._roberta = pipeline(
                 "sentiment-analysis",
                 model="cardiffnlp/twitter-roberta-base-sentiment-latest",
                 device=-1
             )
-        return self._roberta
+        return SentimentAnalyzerAgent._roberta
 
     @property
     def vader(self):
         """Lazy load VADER analyzer."""
-        if self._vader is None:
+        if SentimentAnalyzerAgent._vader is None:
             from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-            self._vader = SentimentIntensityAnalyzer()
-        return self._vader
+            SentimentAnalyzerAgent._vader = SentimentIntensityAnalyzer()
+        return SentimentAnalyzerAgent._vader
 
     # ----- Individual Model Scores -----
 
