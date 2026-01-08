@@ -8,6 +8,10 @@ from dataclasses import dataclass
 from urllib.parse import urlparse
 from django.conf import settings
 
+from research.logging_config import get_logger
+
+logger = get_logger('web_scraper')
+
 
 @dataclass
 class Article:
@@ -100,7 +104,7 @@ class WebScraper:
             )
 
         except Exception as e:
-            print(f"Failed to fetch {url}: {e}")
+            logger.warning(f"Failed to fetch {url}: {e}")
             return None
 
     def _extract_title(self, soup: BeautifulSoup) -> str:

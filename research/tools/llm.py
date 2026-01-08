@@ -6,6 +6,10 @@ import json
 import requests
 from django.conf import settings
 
+from research.logging_config import get_logger
+
+logger = get_logger('llm')
+
 
 class LLM:
     """Unified interface to local Ollama LLM."""
@@ -30,7 +34,7 @@ class LLM:
             response.raise_for_status()
             return response.json().get("response", "")
         except requests.exceptions.RequestException as e:
-            print(f"LLM request failed: {e}")
+            logger.error(f"LLM request failed: {e}")
             return ""
 
     def generate_json(self, prompt: str, system: str = "") -> dict | list:

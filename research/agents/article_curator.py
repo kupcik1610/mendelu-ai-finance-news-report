@@ -11,9 +11,12 @@ Key difference from traditional approach:
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
+from research.logging_config import get_logger
 from research.tools.llm import LLM
 from research.tools.web_search import search_news
 from research.tools.web_scraper import WebScraper
+
+logger = get_logger('article_curator')
 
 
 @dataclass
@@ -66,30 +69,30 @@ class ArticleCuratorAgent:
         Returns:
             List of CuratedArticle objects
         """
-        print(f"[{self.name}] Finding articles about {company_name}...")
+        logger.info(f"Finding articles about {company_name}...")
 
         # 1. Broad news search (get ~30-40 results to filter from)
         search_results = self._broad_search(company_name)
 
         if not search_results:
-            print(f"[{self.name}] No articles found")
+            logger.warning("No articles found")
             return []
 
-        print(f"[{self.name}] Found {len(search_results)} potential articles")
+        logger.info(f"Found {len(search_results)} potential articles")
 
         # 2. LLM evaluates ALL candidates
-        print(f"[{self.name}] Evaluating article relevance and source credibility...")
+        logger.info("Evaluating article relevance and source credibility...")
         evaluated = self._llm_evaluate_articles(search_results, company_name, industry)
 
         # 3. Select best mix (balance relevance, credibility, source diversity)
         selected = self._select_best_mix(evaluated, max_articles)
-        print(f"[{self.name}] Selected {len(selected)} articles for analysis")
+        logger.info(f"Selected {len(selected)} articles for analysis")
 
         # 4. Scrape content from selected articles
-        print(f"[{self.name}] Scraping article content...")
+        logger.info("Scraping article content...")
         articles = self._scrape_and_enrich(selected)
 
-        print(f"[{self.name}] Successfully retrieved {len(articles)} articles")
+        logger.info(f"Successfully retrieved {len(articles)} articles")
         return articles
 
     def _broad_search(self, company_name: str) -> list:

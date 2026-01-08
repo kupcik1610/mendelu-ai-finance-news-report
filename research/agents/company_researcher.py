@@ -2,9 +2,12 @@
 Company Research Agent - Gathers company overview, stock data, and key developments.
 """
 
+from research.logging_config import get_logger
 from research.tools.llm import LLM
 from research.tools.web_search import search_web, search_news
 from research.tools.stock_data import get_stock_data, StockData
+
+logger = get_logger('company_researcher')
 
 
 class CompanyResearchAgent:
@@ -30,18 +33,18 @@ class CompanyResearchAgent:
         Returns:
             Dictionary with company data
         """
-        print(f"[{self.name}] Researching {company_name}...")
+        logger.info(f"Researching {company_name}...")
 
         # 1. Get stock data
-        print(f"[{self.name}] Fetching stock data...")
+        logger.info("Fetching stock data...")
         stock_data = get_stock_data(company_name)
 
         # 2. Search for company info
-        print(f"[{self.name}] Searching for company information...")
+        logger.info("Searching for company information...")
         search_results = self._search_company_info(company_name)
 
         # 3. LLM generates overview
-        print(f"[{self.name}] Generating company overview...")
+        logger.info("Generating company overview...")
         overview = self._generate_overview(company_name, stock_data, search_results)
 
         result = {
@@ -57,7 +60,7 @@ class CompanyResearchAgent:
             'stock_history': stock_data.history if stock_data else {"dates": [], "prices": []},
         }
 
-        print(f"[{self.name}] Research complete")
+        logger.info("Research complete")
         return result
 
     def _search_company_info(self, company_name: str) -> list:

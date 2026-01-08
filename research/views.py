@@ -9,8 +9,11 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 
+from .logging_config import get_logger
 from .models import CompanyResearch
 from .forms import CompanySearchForm
+
+logger = get_logger('views')
 
 
 def index(request):
@@ -133,6 +136,6 @@ def run_research_pipeline(research_id):
     except Exception as e:
         research.status = 'failed'
         research.error_message = str(e)
-        print(f"Research failed: {e}")
+        logger.error(f"Research failed: {e}")
 
     research.save()

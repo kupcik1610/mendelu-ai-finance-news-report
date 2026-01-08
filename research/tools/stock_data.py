@@ -6,6 +6,10 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 import yfinance as yf
 
+from research.logging_config import get_logger
+
+logger = get_logger('stock_data')
+
 
 @dataclass
 class StockData:
@@ -91,7 +95,7 @@ def get_stock_data(company_name: str, ticker: str = None) -> StockData | None:
         )
 
     except Exception as e:
-        print(f"Failed to get stock data for {ticker}: {e}")
+        logger.warning(f"Failed to get stock data for {ticker}: {e}")
         return None
 
 

@@ -24,7 +24,10 @@ warnings.filterwarnings('ignore', category=UserWarning)
 
 from dataclasses import dataclass
 
+from research.logging_config import get_logger
 from research.tools.llm import LLM
+
+logger = get_logger('sentiment_analyzer')
 
 
 @dataclass
@@ -72,7 +75,7 @@ class SentimentAnalyzerAgent:
     def finbert(self):
         """Lazy load FinBERT model."""
         if self._finbert is None:
-            print(f"  [{self.name}] Loading FinBERT...")
+            logger.info("Loading FinBERT model...")
             from transformers import pipeline
             self._finbert = pipeline(
                 "sentiment-analysis",
@@ -85,7 +88,7 @@ class SentimentAnalyzerAgent:
     def roberta(self):
         """Lazy load RoBERTa model."""
         if self._roberta is None:
-            print(f"  [{self.name}] Loading RoBERTa...")
+            logger.info("Loading RoBERTa model...")
             from transformers import pipeline
             self._roberta = pipeline(
                 "sentiment-analysis",

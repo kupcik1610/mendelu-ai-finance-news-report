@@ -13,10 +13,13 @@ Workflow:
 
 import json
 
+from research.logging_config import get_logger
 from research.tools.llm import LLM
 from research.agents.company_researcher import CompanyResearchAgent
 from research.agents.article_curator import ArticleCuratorAgent
 from research.agents.sentiment_analyzer import SentimentAnalyzerAgent
+
+logger = get_logger('orchestrator')
 
 
 class Orchestrator:
@@ -51,12 +54,12 @@ class Orchestrator:
                 "Start it with: ollama serve && ollama pull mistral"
             )
 
-        print(f"\n{'='*60}")
-        print(f"Starting research on: {company_name}")
-        print(f"{'='*60}\n")
+        logger.info("=" * 60)
+        logger.info(f"Starting research on: {company_name}")
+        logger.info("=" * 60)
 
         # 2. Research company
-        print("\n[Phase 1/4] Researching company...")
+        logger.info("[Phase 1/4] Researching company...")
         company_data = self.company_researcher.run(company_name)
 
         # Update research record with company data
@@ -73,7 +76,7 @@ class Orchestrator:
         research.save()
 
         # 3. Gather articles
-        print("\n[Phase 2/4] Curating articles...")
+        logger.info("[Phase 2/4] Curating articles...")
         articles = self.article_curator.run(
             company_name,
             company_data['industry'],
@@ -84,11 +87,11 @@ class Orchestrator:
             raise Exception("No articles found for analysis")
 
         # 4. Analyze sentiment for each article
-        print(f"\n[Phase 3/4] Analyzing sentiment for {len(articles)} articles...")
+        logger.info(f"[Phase 3/4] Analyzing sentiment for {len(articles)} articles...")
         analyzed_articles = []
 
         for i, article in enumerate(articles, 1):
-            print(f"  Analyzing article {i}/{len(articles)}: {article.title[:50]}...")
+            logger.info(f"Analyzing article {i}/{len(articles)}: {article.title[:50]}...")
 
             sentiment = self.sentiment_analyzer.analyze(article.content, article.title)
 
@@ -121,18 +124,18 @@ class Orchestrator:
             analyzed_articles.append(sentiment)
 
         # 5. Calculate aggregates
-        print("\n[Phase 4/4] Generating summary...")
+        logger.info("[Phase 4/4] Generating summary...")
         self._calculate_aggregates(research, analyzed_articles)
 
         # 6. Generate overall summary
         research.llm_summary = self._generate_summary(research, articles, analyzed_articles)
         research.save()
 
-        print(f"\n{'='*60}")
-        print(f"Research complete!")
-        print(f"Overall sentiment: {research.overall_sentiment:.2f} ({research.sentiment_label})")
-        print(f"Articles analyzed: {len(articles)}")
-        print(f"{'='*60}\n")
+        logger.info("=" * 60)
+        logger.info("Research complete!")
+        logger.info(f"Overall sentiment: {research.overall_sentiment:.2f} ({research.sentiment_label})")
+        logger.info(f"Articles analyzed: {len(articles)}")
+        logger.info("=" * 60)
 
     def _calculate_aggregates(self, research, sentiments):
         """Calculate aggregate sentiment metrics."""
