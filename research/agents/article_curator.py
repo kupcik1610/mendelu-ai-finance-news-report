@@ -101,27 +101,32 @@ class ArticleCuratorAgent:
 
     def _broad_search(self, company_name: str) -> list:
         """
-        Search broadly for company news - NO source filtering.
-        Returns raw search results from DuckDuckGo news.
+        Search for financial/business news about the company.
+        Uses finance-focused queries to find market-moving, substantive articles.
         """
-        # Multiple search queries to get diverse results
+        # Finance-focused search queries
         queries = [
-            f"{company_name} news",
-            f"{company_name} latest",
-            f"{company_name}",
+            f"{company_name} stock",
+            f"{company_name} earnings revenue",
+            f"{company_name} investor",
+            f"{company_name} SEC filing",
+            f"{company_name} acquisition merger",
+            f"{company_name} financial results",
+            f"{company_name} analyst rating",
+            f"{company_name} quarterly report",
         ]
 
         all_results = []
         seen_urls = set()
 
         for query in queries:
-            results = search_news(query, max_results=15)
+            results = search_news(query, max_results=10)
             for r in results:
                 if r.url not in seen_urls:
                     seen_urls.add(r.url)
                     all_results.append(r)
 
-        return all_results[:40]  # Cap at 40 for scraping
+        return all_results[:50]  # Cap at 50 for scraping
 
     def _scrape_all(self, search_results: list) -> list[dict]:
         """

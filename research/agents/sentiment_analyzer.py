@@ -1,11 +1,10 @@
 """
 Sentiment Analyzer Agent - Multi-model sentiment analysis.
 
-Uses 4 ML models + LLM:
+Uses 3 ML models + LLM:
 1. FinBERT - Financial sentiment (trained on financial text)
 2. VADER - Lexicon-based (good for intensity/hype detection)
-3. TextBlob - General polarity + subjectivity measure
-4. RoBERTa - General news sentiment
+3. RoBERTa - General news sentiment
 
 Then LLM provides:
 - Its own sentiment score
@@ -36,8 +35,6 @@ class SentimentScores:
     # ML Model scores (-1 to 1)
     finbert: float
     vader: float
-    textblob_polarity: float
-    textblob_subjectivity: float  # 0-1, opinion vs fact
     roberta: float
 
     # LLM analysis
@@ -140,16 +137,6 @@ class SentimentAnalyzerAgent:
         scores = self.vader.polarity_scores(text)
         return scores["compound"]  # Already -1 to 1
 
-    def _textblob_score(self, text: str) -> tuple[float, float]:
-        """
-        TextBlob: Returns (polarity, subjectivity).
-        - polarity: -1 to 1
-        - subjectivity: 0 (fact) to 1 (opinion)
-        """
-        from textblob import TextBlob
-        blob = TextBlob(text)
-        return blob.sentiment.polarity, blob.sentiment.subjectivity
-
     def _roberta_score(self, text: str) -> float:
         """
         RoBERTa: General news sentiment (-1 to 1).
@@ -183,8 +170,6 @@ ARTICLE CONTENT (first 1500 chars):
 OTHER MODEL SCORES:
 - FinBERT (financial sentiment): {scores['finbert']:.2f}
 - VADER (intensity/hype): {scores['vader']:.2f}
-- TextBlob polarity: {scores['textblob_polarity']:.2f}
-- TextBlob subjectivity: {scores['textblob_subjectivity']:.2f} (0=fact, 1=opinion)
 - RoBERTa (general): {scores['roberta']:.2f}
 
 Provide your analysis as JSON:
@@ -225,31 +210,27 @@ Be objective. Consider: Is this genuinely positive/negative news, or just neutra
         # 1. Run all ML models
         finbert = self._finbert_score(content)
         vader = self._vader_score(content)
-        tb_polarity, tb_subjectivity = self._textblob_score(content)
         roberta = self._roberta_score(content)
 
         # 2. Run LLM with other scores as context
         ml_scores = {
             "finbert": finbert,
             "vader": vader,
-            "textblob_polarity": tb_polarity,
-            "textblob_subjectivity": tb_subjectivity,
             "roberta": roberta
         }
         llm_result = self._llm_analyze(title, content, ml_scores)
 
         # 3. Calculate ensemble (weighted average)
-        # Weights: FinBERT 30%, VADER 15%, TextBlob 15%, RoBERTa 20%, LLM 20%
+        # Weights: FinBERT 35%, VADER 20%, RoBERTa 25%, LLM 20%
         ensemble = (
-            finbert * 0.30 +
-            vader * 0.15 +
-            tb_polarity * 0.15 +
-            roberta * 0.20 +
+            finbert * 0.35 +
+            vader * 0.20 +
+            roberta * 0.25 +
             llm_result["score"] * 0.20
         )
 
         # 4. Calculate agreement (inverse of standard deviation)
-        scores_list = [finbert, vader, tb_polarity, roberta, llm_result["score"]]
+        scores_list = [finbert, vader, roberta, llm_result["score"]]
         mean = sum(scores_list) / len(scores_list)
         variance = sum((s - mean) ** 2 for s in scores_list) / len(scores_list)
         std_dev = variance ** 0.5
@@ -266,8 +247,6 @@ Be objective. Consider: Is this genuinely positive/negative news, or just neutra
         return SentimentScores(
             finbert=round(finbert, 3),
             vader=round(vader, 3),
-            textblob_polarity=round(tb_polarity, 3),
-            textblob_subjectivity=round(tb_subjectivity, 3),
             roberta=round(roberta, 3),
             llm_score=round(llm_result["score"], 3),
             llm_commentary=llm_result["commentary"],

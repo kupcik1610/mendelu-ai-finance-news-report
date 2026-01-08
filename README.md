@@ -6,7 +6,7 @@ A Django web application that provides AI-powered daily briefings on any company
 
 - **Company Research**: Gathers stock data, recent developments, and company overview
 - **LLM-Powered Article Curation**: Evaluates and selects relevant articles from diverse sources
-- **Multi-Model Sentiment Analysis**: Uses 4 ML models (FinBERT, VADER, TextBlob, RoBERTa) + LLM
+- **Multi-Model Sentiment Analysis**: Uses 3 ML models (FinBERT, VADER, RoBERTa) + LLM
 - **Daily Briefing Format**: Clean, readable reports with stock charts and sentiment breakdown
 - **Source Transparency**: Shows source type and credibility for each article
 
@@ -24,7 +24,6 @@ source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 ```bash
 pip install -r requirements.txt
-python -m textblob.download_corpora
 ```
 
 ### 3. Start Ollama
@@ -89,9 +88,8 @@ research/
 
 1. **FinBERT** - Financial sentiment (trained on financial text)
 2. **VADER** - Lexicon-based (good for intensity detection)
-3. **TextBlob** - General polarity + subjectivity
-4. **RoBERTa** - General news sentiment
-5. **LLM** - Context-aware interpretation + commentary
+3. **RoBERTa** - General news sentiment
+4. **LLM** - Context-aware interpretation + commentary
 
 ## Configuration
 

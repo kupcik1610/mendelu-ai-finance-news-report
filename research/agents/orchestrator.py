@@ -121,8 +121,6 @@ class Orchestrator:
                 relevance_score=article.relevance_score,
                 finbert_score=sentiment.finbert,
                 vader_score=sentiment.vader,
-                textblob_polarity=sentiment.textblob_polarity,
-                textblob_subjectivity=sentiment.textblob_subjectivity,
                 roberta_score=sentiment.roberta,
                 llm_score=sentiment.llm_score,
                 llm_commentary=sentiment.llm_commentary,
