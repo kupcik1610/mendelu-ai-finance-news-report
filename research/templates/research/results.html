@@ -304,7 +304,7 @@
                             </span>
                         </div>
                         <div class="text-xs text-blue-600 font-mono bg-white rounded p-2 overflow-x-auto">
-                            ({{ article.finbert_score|floatformat:2 }} × 0.35) + ({{ article.vader_score|floatformat:2 }} × 0.20) + ({{ article.roberta_score|floatformat:2 }} × 0.25) + ({{ article.llm_score|floatformat:2 }} × 0.20) = <strong class="{% if article.ensemble_score >= 0.1 %}text-green-600{% elif article.ensemble_score <= -0.1 %}text-red-600{% else %}text-gray-600{% endif %}">{{ article.ensemble_score|floatformat:2 }}</strong>
+                            ({{ article.finbert_score|floatformat:2 }} × 0.30) + ({{ article.vader_score|floatformat:2 }} × 0.10) + ({{ article.roberta_score|floatformat:2 }} × 0.30) + ({{ article.llm_score|floatformat:2 }} × 0.30) = <strong class="{% if article.ensemble_score >= 0.1 %}text-green-600{% elif article.ensemble_score <= -0.1 %}text-red-600{% else %}text-gray-600{% endif %}">{{ article.ensemble_score|floatformat:2 }}</strong>
                         </div>
                     </div>
                 </div>

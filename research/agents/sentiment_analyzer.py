@@ -221,12 +221,12 @@ Be objective. Consider: Is this genuinely positive/negative news, or just neutra
         llm_result = self._llm_analyze(title, content, ml_scores)
 
         # 3. Calculate ensemble (weighted average)
-        # Weights: FinBERT 35%, VADER 20%, RoBERTa 25%, LLM 20%
+        # Weights: FinBERT 30%, VADER 10%, RoBERTa 30%, LLM 30%
         ensemble = (
-            finbert * 0.35 +
-            vader * 0.20 +
-            roberta * 0.25 +
-            llm_result["score"] * 0.20
+            finbert * 0.30 +
+            vader * 0.10 +
+            roberta * 0.30 +
+            llm_result["score"] * 0.30
         )
 
         # 4. Calculate agreement (inverse of standard deviation)

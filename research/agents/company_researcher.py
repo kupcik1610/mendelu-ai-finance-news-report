@@ -119,7 +119,6 @@ Guidelines:
 - Industry should be specific (e.g., "Electric Vehicles & Clean Energy" not just "Automotive")
 - Overview should be factual and based on the search results
 - Developments should be recent, specific events or news items
-- If stock data is available, mention it in the overview
 - Keep the tone professional and objective"""
 
         result = self.llm.generate_json(prompt)
