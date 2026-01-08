@@ -80,20 +80,24 @@ class ArticleCuratorAgent:
 
         logger.info(f"Found {len(search_results)} potential articles")
 
-        # 2. LLM evaluates ALL candidates
-        logger.info("Evaluating article relevance and source credibility...")
-        evaluated = self._llm_evaluate_articles(search_results, company_name, industry)
+        # 2. Scrape ALL articles in parallel first
+        logger.info("Scraping article content...")
+        scraped = self._scrape_all(search_results)
+        logger.info(f"Successfully scraped {len(scraped)} articles")
 
-        # 3. Select best mix (balance relevance, credibility, source diversity)
+        if not scraped:
+            logger.warning("No articles could be scraped")
+            return []
+
+        # 3. LLM evaluates scraped articles (now with full content)
+        logger.info("Evaluating article relevance and source credibility...")
+        evaluated = self._llm_evaluate_articles(scraped, company_name, industry)
+
+        # 4. Select best mix and return top max_articles
         selected = self._select_best_mix(evaluated, max_articles)
         logger.info(f"Selected {len(selected)} articles for analysis")
 
-        # 4. Scrape content from selected articles
-        logger.info("Scraping article content...")
-        articles = self._scrape_and_enrich(selected)
-
-        logger.info(f"Successfully retrieved {len(articles)} articles")
-        return articles
+        return selected
 
     def _broad_search(self, company_name: str) -> list:
         """
@@ -117,24 +121,56 @@ class ArticleCuratorAgent:
                     seen_urls.add(r.url)
                     all_results.append(r)
 
-        return all_results[:40]  # Cap at 40 for LLM evaluation
+        return all_results[:40]  # Cap at 40 for scraping
+
+    def _scrape_all(self, search_results: list) -> list[dict]:
+        """
+        Scrape ALL search results in parallel.
+        Returns list of dicts with scraped content + original search metadata.
+        """
+        scraped = []
+
+        def scrape_one(result):
+            content = self.scraper.fetch(result.url)
+            if content and len(content.content) >= 200:
+                return {
+                    'url': result.url,
+                    'title': result.title or content.title,
+                    'source': content.source,
+                    'source_name': result.source,
+                    'content': content.content,
+                    'author': content.author,
+                    'date': content.date or result.date,
+                    'word_count': content.word_count,
+                }
+            return None
+
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {executor.submit(scrape_one, r): r for r in search_results}
+            for future in as_completed(futures):
+                result = future.result()
+                if result:
+                    scraped.append(result)
+
+        return scraped
 
     def _llm_evaluate_articles(
         self,
-        results: list,
+        scraped: list[dict],
         company_name: str,
         industry: str
-    ) -> list:
+    ) -> list[dict]:
         """
-        LLM evaluates each article for relevance and source credibility.
-        Returns list of results with added evaluation metadata.
+        LLM evaluates scraped articles for relevance and source credibility.
+        Returns list of scraped articles with added evaluation metadata.
         """
-        # Format results for LLM
+        # Format articles for LLM (now with actual content)
         articles_text = ""
-        for i, r in enumerate(results):
-            articles_text += f"""{i+1}. "{r.title}"
-   Source: {r.source}
-   Snippet: {r.snippet[:200] if r.snippet else 'N/A'}
+        for i, article in enumerate(scraped):
+            content_preview = article['content'][:500]
+            articles_text += f"""{i+1}. "{article['title']}"
+   Source: {article['source_name']}
+   Content preview: {content_preview}...
 
 """
 
@@ -169,7 +205,7 @@ Scoring guidelines:
 - Press releases = 0.5-0.6 (biased but factual)
 - Unknown/suspicious = 0.3-0.5
 
-Include ALL {len(results)} articles in your response."""
+Include ALL {len(scraped)} articles in your response."""
 
         evaluations = self.llm.generate_json(prompt)
 
@@ -184,26 +220,26 @@ Include ALL {len(results)} articles in your response."""
                 if isinstance(e, dict) and 'index' in e:
                     eval_map[e['index']] = e
 
-        # Merge evaluations back into results
+        # Merge evaluations into scraped articles
         enriched = []
-        for i, r in enumerate(results):
+        for i, article in enumerate(scraped):
             eval_data = eval_map.get(i + 1, {})
-            enriched.append({
-                'result': r,
-                'relevance': float(eval_data.get('relevance', 0.5)),
-                'source_type': eval_data.get('source_type', 'unknown'),
-                'credibility': float(eval_data.get('credibility', 0.5)),
-                'credibility_note': eval_data.get('credibility_note', '')
-            })
+            article['relevance'] = float(eval_data.get('relevance', 0.5))
+            article['source_type'] = eval_data.get('source_type', 'unknown')
+            article['credibility'] = float(eval_data.get('credibility', 0.5))
+            article['credibility_note'] = eval_data.get('credibility_note', '')
+            enriched.append(article)
 
         return enriched
 
-    def _select_best_mix(self, evaluated: list, max_articles: int) -> list:
+    def _select_best_mix(self, evaluated: list[dict], max_articles: int) -> list[CuratedArticle]:
         """
         Select best mix of articles balancing:
         - Relevance (must be about the company)
         - Credibility (prefer higher, but don't exclude all niche sources)
         - Source diversity (mix of major outlets + niche publications)
+
+        Returns CuratedArticle objects.
         """
         # Filter out very low relevance (< 0.3)
         candidates = [e for e in evaluated if e['relevance'] >= 0.3]
@@ -241,41 +277,21 @@ Include ALL {len(results)} articles in your response."""
                 if len(selected) >= max_articles:
                     break
 
-        return selected
-
-    def _scrape_and_enrich(self, selected: list) -> list[CuratedArticle]:
-        """
-        Scrape content from selected URLs and create CuratedArticle objects.
-        Uses parallel scraping for speed.
-        """
-        articles = []
-
-        def scrape_one(item):
-            r = item['result']
-            content = self.scraper.fetch(r.url)
-            if content and len(content.content) >= 200:
-                return CuratedArticle(
-                    url=r.url,
-                    title=r.title or content.title,
-                    source=content.source,
-                    source_name=r.source,
-                    content=content.content,
-                    author=content.author,
-                    date=content.date or r.date,
-                    word_count=content.word_count,
-                    source_type=item['source_type'],
-                    credibility_score=item['credibility'],
-                    credibility_note=item['credibility_note'],
-                    relevance_score=item['relevance']
-                )
-            return None
-
-        # Parallel scraping
-        with ThreadPoolExecutor(max_workers=5) as executor:
-            futures = {executor.submit(scrape_one, item): item for item in selected}
-            for future in as_completed(futures):
-                result = future.result()
-                if result:
-                    articles.append(result)
-
-        return articles
+        # Convert to CuratedArticle objects
+        return [
+            CuratedArticle(
+                url=article['url'],
+                title=article['title'],
+                source=article['source'],
+                source_name=article['source_name'],
+                content=article['content'],
+                author=article['author'],
+                date=article['date'],
+                word_count=article['word_count'],
+                source_type=article['source_type'],
+                credibility_score=article['credibility'],
+                credibility_note=article['credibility_note'],
+                relevance_score=article['relevance']
+            )
+            for article in selected
+        ]
