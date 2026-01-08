@@ -36,6 +36,11 @@ class Orchestrator:
         self.article_curator = ArticleCuratorAgent(self.llm)
         self.sentiment_analyzer = SentimentAnalyzerAgent(self.llm)
 
+    def _update_progress(self, research, message: str):
+        """Update progress message for frontend display."""
+        research.progress_message = message
+        research.save(update_fields=['progress_message'])
+
     def run(self, research):
         """
         Execute full pipeline and update research record.
@@ -48,6 +53,7 @@ class Orchestrator:
         company_name = research.company_name
 
         # 1. Validate Ollama is available
+        self._update_progress(research, "Connecting to LLM...")
         if not self.llm.is_available():
             raise Exception(
                 "Ollama is not running or model not found. "
@@ -59,6 +65,7 @@ class Orchestrator:
         logger.info("=" * 60)
 
         # 2. Research company
+        self._update_progress(research, "Fetching stock data and company info...")
         logger.info("[Phase 1/4] Researching company...")
         company_data = self.company_researcher.run(company_name)
 
@@ -76,6 +83,7 @@ class Orchestrator:
         research.save()
 
         # 3. Gather articles
+        self._update_progress(research, "Searching for news articles...")
         logger.info("[Phase 2/4] Curating articles...")
         articles = self.article_curator.run(
             company_name,
@@ -91,6 +99,7 @@ class Orchestrator:
         analyzed_articles = []
 
         for i, article in enumerate(articles, 1):
+            self._update_progress(research, f"Analyzing article {i}/{len(articles)}...")
             logger.info(f"Analyzing article {i}/{len(articles)}: {article.title[:50]}...")
 
             sentiment = self.sentiment_analyzer.analyze(article.content, article.title)
@@ -124,11 +133,13 @@ class Orchestrator:
             analyzed_articles.append(sentiment)
 
         # 5. Calculate aggregates
+        self._update_progress(research, "Generating executive summary...")
         logger.info("[Phase 4/4] Generating summary...")
         self._calculate_aggregates(research, analyzed_articles)
 
         # 6. Generate overall summary
         research.llm_summary = self._generate_summary(research, articles, analyzed_articles)
+        research.progress_message = "Complete!"
         research.save()
 
         logger.info("=" * 60)

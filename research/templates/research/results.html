@@ -8,13 +8,7 @@
     <div class="max-w-2xl mx-auto text-center py-16">
         <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-6"></div>
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Analyzing {{ research.company_name }}...</h2>
-        <p class="text-gray-600 mb-4" id="status-text">This may take a few minutes</p>
-        <div class="text-sm text-gray-500">
-            <p>Researching company information</p>
-            <p>Curating relevant articles</p>
-            <p>Running sentiment analysis</p>
-            <p>Generating briefing</p>
-        </div>
+        <p class="text-gray-600 text-lg mb-4" id="progress-text">{{ research.progress_message|default:"Starting..." }}</p>
     </div>
 
     <script>
@@ -26,8 +20,11 @@
                     if (data.status === 'completed' || data.status === 'failed') {
                         location.reload();
                     }
+                    if (data.progress) {
+                        document.getElementById('progress-text').textContent = data.progress;
+                    }
                 });
-        }, 3000);
+        }, 2000);
     </script>
 
 {% elif research.status == 'failed' %}

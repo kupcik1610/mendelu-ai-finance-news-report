@@ -39,6 +39,7 @@ class CompanyResearch(models.Model):
     # Status
     status = models.CharField(max_length=20, default='pending')  # pending/processing/completed/failed
     error_message = models.TextField(blank=True)
+    progress_message = models.CharField(max_length=200, blank=True)  # Live progress updates
 
     class Meta:
         ordering = ['-created_at']

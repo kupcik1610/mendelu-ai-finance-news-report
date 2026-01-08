@@ -73,7 +73,8 @@ def status(request, pk):
     research = get_object_or_404(CompanyResearch, pk=pk)
     return JsonResponse({
         'status': research.status,
-        'error': research.error_message
+        'error': research.error_message,
+        'progress': research.progress_message
     })
 
 

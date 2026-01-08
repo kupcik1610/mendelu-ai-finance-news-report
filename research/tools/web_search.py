@@ -5,6 +5,10 @@ Web search functionality using DuckDuckGo.
 from dataclasses import dataclass
 from ddgs import DDGS
 
+from research.logging_config import get_logger
+
+logger = get_logger('web_search')
+
 
 @dataclass
 class SearchResult:
@@ -40,7 +44,7 @@ def search_news(query: str, max_results: int = 20) -> list[SearchResult]:
                     source=r.get("source", "")
                 ))
     except Exception as e:
-        print(f"Search failed: {e}")
+        logger.warning(f"Search failed: {e}")
 
     return results
 
@@ -69,6 +73,6 @@ def search_web(query: str, max_results: int = 10) -> list[SearchResult]:
                     source=r.get("href", "").split("/")[2] if r.get("href") else ""
                 ))
     except Exception as e:
-        print(f"Search failed: {e}")
+        logger.warning(f"Search failed: {e}")
 
     return results
