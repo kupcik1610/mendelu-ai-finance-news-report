@@ -1,0 +1,23 @@
+# Django
+Django>=4.2
+
+# LLM
+ollama
+
+# Sentiment Models
+transformers
+torch
+vaderSentiment
+textblob
+
+# Web Scraping
+requests
+beautifulsoup4
+lxml
+ddgs
+
+# Stock Data
+yfinance
+
+# Utilities
+rich
