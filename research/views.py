@@ -86,43 +86,6 @@ def history(request):
     })
 
 
-def api_research(request, pk):
-    """Full research data as JSON."""
-    research = get_object_or_404(CompanyResearch, pk=pk)
-    articles = research.articles.all()
-
-    return JsonResponse({
-        'company': research.company_name,
-        'status': research.status,
-        'industry': research.industry,
-        'overview': research.overview,
-        'stock_ticker': research.stock_ticker,
-        'stock_price': str(research.stock_price) if research.stock_price else None,
-        'stock_change': str(research.stock_change_percent) if research.stock_change_percent else None,
-        'overall_sentiment': str(research.overall_sentiment) if research.overall_sentiment else None,
-        'sentiment_label': research.sentiment_label,
-        'llm_summary': research.llm_summary,
-        'positive_count': research.positive_count,
-        'negative_count': research.negative_count,
-        'neutral_count': research.neutral_count,
-        'articles': [
-            {
-                'title': a.title,
-                'source': a.source,
-                'source_name': a.source_name,
-                'source_type': a.source_type,
-                'url': a.url,
-                'sentiment_label': a.sentiment_label,
-                'ensemble_score': str(a.ensemble_score) if a.ensemble_score else None,
-                'credibility_score': str(a.credibility_score) if a.credibility_score else None,
-                'credibility_note': a.credibility_note,
-                'llm_commentary': a.llm_commentary
-            }
-            for a in articles
-        ]
-    })
-
-
 def run_research_pipeline(research_id):
     """Background task: run the full research pipeline."""
     # Import here to avoid circular imports

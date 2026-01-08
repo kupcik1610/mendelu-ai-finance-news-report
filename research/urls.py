@@ -16,7 +16,4 @@ urlpatterns = [
 
     # History
     path('history/', views.history, name='history'),
-
-    # API endpoints
-    path('api/research/<int:pk>/', views.api_research, name='api_research'),
 ]
