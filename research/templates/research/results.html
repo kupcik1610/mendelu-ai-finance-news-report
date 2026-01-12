@@ -237,42 +237,12 @@
                                 <span class="relative group">
                                     <span class="cursor-help text-gray-400 hover:text-blue-500">&#9432;</span>
                                     <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity w-48 pointer-events-none z-10">
-                                        Financial domain BERT model trained on financial news. Best at understanding stock/business context. <strong>Weight: 35%</strong>
+                                        Financial domain BERT model trained on financial news. Best at understanding stock/business context. <strong>Weight: 50%</strong>
                                     </span>
                                 </span>
                             </div>
                             <div class="font-bold text-lg {% if article.finbert_score >= 0.1 %}text-green-600{% elif article.finbert_score <= -0.1 %}text-red-600{% else %}text-gray-600{% endif %}">
                                 {% if article.finbert_score >= 0 %}+{% endif %}{{ article.finbert_score|floatformat:2 }}
-                            </div>
-                        </div>
-                        <!-- VADER -->
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <div class="flex items-center gap-1 text-gray-500 mb-1">
-                                <span>VADER</span>
-                                <span class="relative group">
-                                    <span class="cursor-help text-gray-400 hover:text-blue-500">&#9432;</span>
-                                    <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity w-48 pointer-events-none z-10">
-                                        Lexicon-based sentiment. Excellent at detecting intensity, hype, and emotional language from capitalization & punctuation. <strong>Weight: 20%</strong>
-                                    </span>
-                                </span>
-                            </div>
-                            <div class="font-bold text-lg {% if article.vader_score >= 0.1 %}text-green-600{% elif article.vader_score <= -0.1 %}text-red-600{% else %}text-gray-600{% endif %}">
-                                {% if article.vader_score >= 0 %}+{% endif %}{{ article.vader_score|floatformat:2 }}
-                            </div>
-                        </div>
-                        <!-- RoBERTa -->
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <div class="flex items-center gap-1 text-gray-500 mb-1">
-                                <span>RoBERTa</span>
-                                <span class="relative group">
-                                    <span class="cursor-help text-gray-400 hover:text-blue-500">&#9432;</span>
-                                    <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity w-48 pointer-events-none z-10">
-                                        Modern transformer model trained on Twitter/social media. Good at general news sentiment. <strong>Weight: 25%</strong>
-                                    </span>
-                                </span>
-                            </div>
-                            <div class="font-bold text-lg {% if article.roberta_score >= 0.1 %}text-green-600{% elif article.roberta_score <= -0.1 %}text-red-600{% else %}text-gray-600{% endif %}">
-                                {% if article.roberta_score >= 0 %}+{% endif %}{{ article.roberta_score|floatformat:2 }}
                             </div>
                         </div>
                         <!-- LLM -->
@@ -282,7 +252,7 @@
                                 <span class="relative group">
                                     <span class="cursor-help text-gray-400 hover:text-blue-500">&#9432;</span>
                                     <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity w-48 pointer-events-none z-10">
-                                        Large Language Model (Mistral) providing contextual analysis. Interprets nuance and explains model disagreements. <strong>Weight: 20%</strong>
+                                        Large Language Model providing contextual analysis. Understands nuance and investor relevance. <strong>Weight: 50%</strong>
                                     </span>
                                 </span>
                             </div>
@@ -299,20 +269,20 @@
                             <span class="relative group">
                                 <span class="cursor-help text-blue-400 hover:text-blue-600">&#9432;</span>
                                 <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity w-64 pointer-events-none z-10">
-                                    The final score is a weighted average of all models. FinBERT has highest weight (35%) due to financial domain expertise. Score > 0.1 = positive, < -0.1 = negative, else neutral.
+                                    The final score is the average of FinBERT (financial domain) and LLM (contextual understanding). Score > 0.1 = positive, < -0.1 = negative, else neutral.
                                 </span>
                             </span>
                         </div>
                         <div class="text-xs text-blue-600 font-mono bg-white rounded p-2 overflow-x-auto">
-                            ({{ article.finbert_score|floatformat:2 }} × 0.30) + ({{ article.vader_score|floatformat:2 }} × 0.10) + ({{ article.roberta_score|floatformat:2 }} × 0.30) + ({{ article.llm_score|floatformat:2 }} × 0.30) = <strong class="{% if article.ensemble_score >= 0.1 %}text-green-600{% elif article.ensemble_score <= -0.1 %}text-red-600{% else %}text-gray-600{% endif %}">{{ article.ensemble_score|floatformat:2 }}</strong>
+                            ({{ article.finbert_score|floatformat:2 }} + {{ article.llm_score|floatformat:2 }}) / 2 = <strong class="{% if article.ensemble_score >= 0.1 %}text-green-600{% elif article.ensemble_score <= -0.1 %}text-red-600{% else %}text-gray-600{% endif %}">{{ article.ensemble_score|floatformat:2 }}</strong>
                         </div>
                     </div>
                 </div>
 
-                <!-- LLM Commentary -->
-                {% if article.llm_commentary %}
+                <!-- LLM Reasoning -->
+                {% if article.llm_reasoning %}
                 <div class="bg-gray-50 rounded p-3 mt-3 text-sm text-gray-700">
-                    <span class="font-medium">AI Analysis:</span> {{ article.llm_commentary }}
+                    <span class="font-medium">AI Analysis:</span> {{ article.llm_reasoning }}
                 </div>
                 {% endif %}
             </div>

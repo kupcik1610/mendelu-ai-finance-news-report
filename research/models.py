@@ -94,12 +94,8 @@ class Article(models.Model):
 
     # Sentiment scores (all -1 to 1 scale)
     finbert_score = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
-    vader_score = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
-    roberta_score = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
-
-    # LLM analysis
     llm_score = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
-    llm_commentary = models.TextField(blank=True)
+    llm_reasoning = models.TextField(blank=True)
 
     # Aggregated
     ensemble_score = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)

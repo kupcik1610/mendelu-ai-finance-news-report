@@ -1,15 +1,9 @@
 """
-Sentiment Analyzer Agent - Multi-model sentiment analysis.
+Sentiment Analyzer Agent - FinBERT + LLM sentiment analysis.
 
-Uses 3 ML models + LLM:
+Uses 2 complementary approaches:
 1. FinBERT - Financial sentiment (trained on financial text)
-2. VADER - Lexicon-based (good for intensity/hype detection)
-3. RoBERTa - General news sentiment
-
-Then LLM provides:
-- Its own sentiment score
-- Commentary explaining why models agree/disagree
-- Context-aware interpretation
+2. LLM - Context-aware sentiment with reasoning
 """
 
 import os
@@ -31,36 +25,26 @@ logger = get_logger('sentiment_analyzer')
 
 @dataclass
 class SentimentScores:
-    """Sentiment scores from all models for one article."""
-    # ML Model scores (-1 to 1)
-    finbert: float
-    vader: float
-    roberta: float
+    """Sentiment scores from FinBERT + LLM for one article."""
+    finbert: float  # -1 to 1
+    llm_score: float  # -1 to 1
+    llm_reasoning: str
 
-    # LLM analysis
-    llm_score: float
-    llm_commentary: str
-
-    # Aggregated
-    ensemble: float
+    ensemble: float  # weighted average
     agreement: float  # 0-1, how much models agree
     label: str  # positive/negative/neutral
 
 
 class SentimentAnalyzerAgent:
     """
-    Multi-model sentiment analysis agent.
+    FinBERT + LLM sentiment analysis agent.
 
-    Analyzes text using 4 different sentiment models plus LLM,
-    then combines them into an ensemble score with commentary.
+    Combines FinBERT (financial domain) with LLM (contextual reasoning)
+    for accurate financial news sentiment analysis.
     """
 
     FINBERT_CHUNK_SIZE = 500
-
-    # Class-level model cache (shared across instances)
-    _finbert = None
-    _roberta = None
-    _vader = None
+    _finbert = None  # Class-level cache
 
     def __init__(self, llm: LLM = None):
         self.llm = llm or LLM()
@@ -81,28 +65,7 @@ class SentimentAnalyzerAgent:
             )
         return SentimentAnalyzerAgent._finbert
 
-    @property
-    def roberta(self):
-        """Lazy load RoBERTa model."""
-        if SentimentAnalyzerAgent._roberta is None:
-            logger.info("Loading RoBERTa model...")
-            from transformers import pipeline
-            SentimentAnalyzerAgent._roberta = pipeline(
-                "sentiment-analysis",
-                model="cardiffnlp/twitter-roberta-base-sentiment-latest",
-                device=-1
-            )
-        return SentimentAnalyzerAgent._roberta
-
-    @property
-    def vader(self):
-        """Lazy load VADER analyzer."""
-        if SentimentAnalyzerAgent._vader is None:
-            from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
-            SentimentAnalyzerAgent._vader = SentimentIntensityAnalyzer()
-        return SentimentAnalyzerAgent._vader
-
-    # ----- Individual Model Scores -----
+    # ----- Model Scores -----
 
     def _finbert_score(self, text: str) -> float:
         """
@@ -129,56 +92,22 @@ class SentimentAnalyzerAgent:
 
         return sum(scores) / len(scores) if scores else 0.0
 
-    def _vader_score(self, text: str) -> float:
+    def _llm_score(self, title: str, content: str) -> dict:
         """
-        VADER: Lexicon-based sentiment (-1 to 1).
-        Good at detecting intensity, caps, exclamation marks.
+        LLM: Independent sentiment score + reasoning.
         """
-        scores = self.vader.polarity_scores(text)
-        return scores["compound"]  # Already -1 to 1
+        prompt = f"""Analyze this news article's sentiment for investors.
 
-    def _roberta_score(self, text: str) -> float:
-        """
-        RoBERTa: General news sentiment (-1 to 1).
-        Truncate to ~512 tokens (roughly 2000 chars).
-        """
-        try:
-            result = self.roberta(text[:2000])[0]
-            label = result["label"].lower()
-            score = result["score"]
+TITLE: {title}
 
-            if "positive" in label:
-                return score
-            elif "negative" in label:
-                return -score
-            else:
-                return 0.0
-        except Exception:
-            return 0.0
+CONTENT:
+{content}
 
-    def _llm_analyze(self, title: str, content: str, scores: dict) -> dict:
-        """
-        LLM: Own sentiment score + commentary on other models.
-        """
-        prompt = f"""Analyze this news article's sentiment.
-
-ARTICLE TITLE: {title}
-
-ARTICLE CONTENT (first 1500 chars):
-{content[:1500]}
-
-OTHER MODEL SCORES:
-- FinBERT (financial sentiment): {scores['finbert']:.2f}
-- VADER (intensity/hype): {scores['vader']:.2f}
-- RoBERTa (general): {scores['roberta']:.2f}
-
-Provide your analysis as JSON:
+Respond as JSON:
 {{
-    "score": <your sentiment score from -1.0 to 1.0>,
-    "commentary": "<2-3 sentences explaining: What's the overall sentiment? Why might models agree/disagree? Is this factual news or opinion?>"
-}}
-
-Be objective. Consider: Is this genuinely positive/negative news, or just neutral reporting?"""
+    "score": <-1.0 to 1.0>,
+    "reasoning": "<1-2 sentences: Is this genuinely positive/negative news, or neutral factual reporting?>"
+}}"""
 
         result = self.llm.generate_json(prompt)
 
@@ -191,52 +120,33 @@ Be objective. Consider: Is this genuinely positive/negative news, or just neutra
 
         return {
             "score": score,
-            "commentary": str(result.get("commentary", ""))[:500]
+            "commentary": str(result.get("reasoning", ""))[:500]
         }
 
     # ----- Main Analysis -----
 
     def analyze(self, content: str, title: str) -> SentimentScores:
         """
-        Run all sentiment models on article content.
+        Run FinBERT + LLM sentiment analysis on article.
 
         Args:
             content: Article text content
             title: Article title
 
         Returns:
-            SentimentScores object with all model results
+            SentimentScores with FinBERT, LLM, and ensemble results
         """
-        # 1. Run all ML models
         finbert = self._finbert_score(content)
-        vader = self._vader_score(content)
-        roberta = self._roberta_score(content)
+        llm_result = self._llm_score(title, content)
+        llm_score = llm_result["score"]
 
-        # 2. Run LLM with other scores as context
-        ml_scores = {
-            "finbert": finbert,
-            "vader": vader,
-            "roberta": roberta
-        }
-        llm_result = self._llm_analyze(title, content, ml_scores)
+        # Ensemble: 50% FinBERT, 50% LLM
+        ensemble = (finbert + llm_score) / 2
 
-        # 3. Calculate ensemble (weighted average)
-        # Weights: FinBERT 30%, VADER 10%, RoBERTa 30%, LLM 30%
-        ensemble = (
-            finbert * 0.30 +
-            vader * 0.10 +
-            roberta * 0.30 +
-            llm_result["score"] * 0.30
-        )
+        # Agreement: how close are the two scores (0-1)
+        agreement = 1 - abs(finbert - llm_score) / 2
 
-        # 4. Calculate agreement (inverse of standard deviation)
-        scores_list = [finbert, vader, roberta, llm_result["score"]]
-        mean = sum(scores_list) / len(scores_list)
-        variance = sum((s - mean) ** 2 for s in scores_list) / len(scores_list)
-        std_dev = variance ** 0.5
-        agreement = max(0, 1 - std_dev)  # 1 = perfect agreement
-
-        # 5. Determine label
+        # Label
         if ensemble > 0.1:
             label = "positive"
         elif ensemble < -0.1:
@@ -246,10 +156,8 @@ Be objective. Consider: Is this genuinely positive/negative news, or just neutra
 
         return SentimentScores(
             finbert=round(finbert, 3),
-            vader=round(vader, 3),
-            roberta=round(roberta, 3),
-            llm_score=round(llm_result["score"], 3),
-            llm_commentary=llm_result["commentary"],
+            llm_score=round(llm_score, 3),
+            llm_reasoning=llm_result["commentary"],
             ensemble=round(ensemble, 3),
             agreement=round(agreement, 2),
             label=label

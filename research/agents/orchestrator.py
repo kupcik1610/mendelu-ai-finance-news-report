@@ -120,10 +120,8 @@ class Orchestrator:
                 credibility_note=article.credibility_note,
                 relevance_score=article.relevance_score,
                 finbert_score=sentiment.finbert,
-                vader_score=sentiment.vader,
-                roberta_score=sentiment.roberta,
                 llm_score=sentiment.llm_score,
-                llm_commentary=sentiment.llm_commentary,
+                llm_reasoning=sentiment.llm_reasoning,
                 ensemble_score=sentiment.ensemble,
                 model_agreement=sentiment.agreement,
                 sentiment_label=sentiment.label

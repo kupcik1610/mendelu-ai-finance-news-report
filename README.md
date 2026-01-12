@@ -43,7 +43,6 @@ ollama pull mistral
 ```bash
 python manage.py makemigrations research
 python manage.py migrate
-python manage.py createsuperuser  # Optional, for admin access
 ```
 
 The database is SQLite and will be created at `company_sentiment/db.sqlite3`.
