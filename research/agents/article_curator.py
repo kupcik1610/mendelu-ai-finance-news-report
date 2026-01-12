@@ -169,37 +169,36 @@ class ArticleCuratorAgent:
 
 """
 
-        prompt = f"""You are filtering articles for stock sentiment analysis of {company_name}.
+        prompt = f"""Select articles for sentiment analysis of {company_name}.
 
-Select the {max_articles} BEST articles based on these criteria:
+CRITICAL: Only include articles where {company_name} is the PRIMARY subject (80%+ of the content is about them).
 
-1. PRIMARY FOCUS
-   - {company_name} is the MAIN subject of the article
-   - NOT a roundup, comparison piece, or industry overview
-   - NOT just a brief mention within a larger story
+REJECT articles that:
+- Mention {company_name} briefly in a broader industry story
+- Compare multiple companies equally
+- Are market roundups or "stocks to watch" lists
+- Focus on a competitor but mention {company_name}
+- Are press releases, sponsored content, or anonymous blogs
 
-2. STOCK-MOVING POTENTIAL
-   The news could plausibly affect the stock price:
-   - Earnings, revenue, guidance
-   - Acquisitions, mergers, partnerships, major contracts
-   - Product launches, recalls, failures
-   - Leadership changes, layoffs, restructuring
-   - Lawsuits, regulatory actions, investigations
-   - Analyst upgrades/downgrades
+ACCEPT articles about:
+- {company_name}'s earnings, revenue, guidance
+- {company_name}'s acquisitions, partnerships, contracts
+- {company_name}'s products, leadership, strategy
+- Analyst ratings specifically for {company_name}
+- Lawsuits or regulatory actions against {company_name}
 
-3. CREDIBLE SOURCE
-   - Established news organization or financial publication
-   - NOT press releases, sponsored content, or anonymous blogs
+Strongly prefer established news organizations and financial publications.
 
 ---
 
 ARTICLES:
-{articles_text}
+{articles_t ext}
 
 ---
 
-Return EXACTLY {max_articles} indices (or fewer if not enough qualify).
-Best first, comma-separated. Example: 5, 2, 14, 8, 11, 3, 9, 7, 12, 1"""
+Return up to {max_articles} indices of articles that are PREDOMINANTLY about {company_name}.
+Comma-separated, best first. Example: 5, 2, 14, 8
+Return NONE if no articles qualify."""
 
         response = self.llm.generate(prompt)
 

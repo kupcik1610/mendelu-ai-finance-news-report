@@ -106,7 +106,7 @@ CONTENT:
 Respond as JSON:
 {{
     "score": <-1.0 to 1.0>,
-    "reasoning": "<1-2 sentences: Is this genuinely positive/negative news, or neutral factual reporting?>"
+    "reasoning": "<3-4 sentences: Is this genuinely positive/negative news, or neutral factual reporting?>"
 }}"""
 
         result = self.llm.generate_json(prompt)
