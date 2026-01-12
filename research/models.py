@@ -86,12 +86,6 @@ class Article(models.Model):
     content_preview = models.TextField(blank=True)  # First 300 chars
     word_count = models.IntegerField(default=0)
 
-    # Source credibility (LLM-assessed)
-    source_type = models.CharField(max_length=50, blank=True)  # major_outlet, industry_publication, niche_blog, unknown
-    credibility_score = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)  # 0-1
-    credibility_note = models.CharField(max_length=300, blank=True)
-    relevance_score = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)  # 0-1
-
     # Sentiment scores (all -1 to 1 scale)
     finbert_score = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)
     llm_score = models.DecimalField(max_digits=4, decimal_places=3, null=True, blank=True)

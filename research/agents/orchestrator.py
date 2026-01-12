@@ -87,7 +87,6 @@ class Orchestrator:
         logger.info("[Phase 2/4] Curating articles...")
         articles = self.article_curator.run(
             company_name,
-            company_data['industry'],
             max_articles=10
         )
 
@@ -115,10 +114,6 @@ class Orchestrator:
                 published_date=article.date,
                 content_preview=article.content[:300],
                 word_count=article.word_count,
-                source_type=article.source_type,
-                credibility_score=article.credibility_score,
-                credibility_note=article.credibility_note,
-                relevance_score=article.relevance_score,
                 finbert_score=sentiment.finbert,
                 llm_score=sentiment.llm_score,
                 llm_reasoning=sentiment.llm_reasoning,

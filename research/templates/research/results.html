@@ -169,44 +169,11 @@
                             <!-- Source -->
                             <span class="font-medium text-gray-700">{{ article.source_name|default:article.source }}</span>
 
-                            <!-- Source Type Badge -->
-                            <span class="px-2 py-0.5 rounded text-xs font-medium
-                                {% if article.source_type == 'major_outlet' %}bg-blue-100 text-blue-700
-                                {% elif article.source_type == 'industry_publication' %}bg-purple-100 text-purple-700
-                                {% elif article.source_type == 'niche_blog' %}bg-yellow-100 text-yellow-700
-                                {% elif article.source_type == 'press_release' %}bg-orange-100 text-orange-700
-                                {% else %}bg-gray-100 text-gray-700{% endif %}">
-                                {% if article.source_type == 'major_outlet' %}Major Outlet
-                                {% elif article.source_type == 'industry_publication' %}Industry Pub
-                                {% elif article.source_type == 'niche_blog' %}Niche Blog
-                                {% elif article.source_type == 'press_release' %}Press Release
-                                {% else %}Unknown{% endif %}
-                            </span>
-
-                            <!-- Credibility Indicator -->
-                            {% if article.credibility_score %}
-                            <span class="text-gray-400" title="{{ article.credibility_note }}">
-                                {% if article.credibility_score >= 0.8 %}
-                                    <span class="text-green-500">&#9679;&#9679;&#9679;</span>
-                                {% elif article.credibility_score >= 0.5 %}
-                                    <span class="text-yellow-500">&#9679;&#9679;</span><span class="text-gray-300">&#9679;</span>
-                                {% else %}
-                                    <span class="text-red-500">&#9679;</span><span class="text-gray-300">&#9679;&#9679;</span>
-                                {% endif %}
-                                <span class="text-xs text-gray-500 ml-1">credibility</span>
-                            </span>
-                            {% endif %}
-
                             {% if article.published_date %}
                             <span class="text-gray-400">|</span>
                             <span class="text-gray-500">{{ article.published_date }}</span>
                             {% endif %}
                         </div>
-
-                        <!-- Credibility Note -->
-                        {% if article.credibility_note %}
-                        <p class="text-xs text-gray-500 mt-1 italic">{{ article.credibility_note }}</p>
-                        {% endif %}
                     </div>
 
                     <!-- Sentiment Score -->
