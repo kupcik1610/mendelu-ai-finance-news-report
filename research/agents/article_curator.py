@@ -192,7 +192,7 @@ Strongly prefer established news organizations and financial publications.
 ---
 
 ARTICLES:
-{articles_t ext}
+{articles_text}
 
 ---
 
